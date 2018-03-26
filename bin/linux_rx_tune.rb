@@ -246,7 +246,7 @@ module LinuxRxTune # :nodoc:
         irqs.each_index do |i|
           cidx = 0 if cidx == cores.length
           hex = core_list_to_hexmap([ cores[cidx] ],core_cnt)
-          data["/proc/irq/#{irqs[i]}/smp_affinity"] = [ hex , cores[cidx] ]
+          data["/proc/irq/#{irqs[i]}/smp_affinity"] = [ hex , [cores[cidx]] ]
           cidx+=1
         end
       data
