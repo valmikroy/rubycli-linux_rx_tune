@@ -218,8 +218,6 @@ module LinuxRxTune # :nodoc:
 
 
     def show_net_affinity
-      scan_proc_interrupts
-      read_cpu_topology
 
       report = []
 
@@ -358,23 +356,6 @@ module LinuxRxTune # :nodoc:
 
 
 
-    def func1(j)
-      LinuxRxTune.logger.info("Default logging test - #{j}")
-      LinuxRxTune.logger.debug("debug/verbose logging test - #{j}")
-      func2(j) + 2
-    end
-
-    def func2(i)
-      LinuxRxTune.logger.info("Default logging test - #{i}")
-      LinuxRxTune.logger.debug("debug/verbose logging test - #{i}")
-      i + 1
-    end
-
-    def start
-      puts func1(4)
-      puts func2(5)
-    end
-
   end
 
   # CLI
@@ -421,21 +402,24 @@ module LinuxRxTune # :nodoc:
     desc 'show_rss', 'Show existing RSS settings'
     global_options
     def show_rss
-     puts show_net_affinity
+      scan_proc_interrupts
+      read_cpu_topology
+      puts show_net_affinity
     end
 
     desc 'set_rss', 'Set RSS for existing channels'
     global_options
     core_options
     def set_rss
-      # all cores on single NUMA
-      #
+      scan_proc_interrupts
+      read_cpu_topology
 
       if options[:all_cores]
         data = enable_rss_numa_all_cores(options[:numa])
       else
         data = enable_rss_numa_per_core(options[:numa])
       end
+
 
       data.each do | iface, irq_info|
         puts "# setting up first NIC #{iface}"
@@ -444,6 +428,8 @@ module LinuxRxTune # :nodoc:
           puts "#{smp_affinity} > #{cpu_maps[0]}"
         end
       end
+
+
     end
 
 
