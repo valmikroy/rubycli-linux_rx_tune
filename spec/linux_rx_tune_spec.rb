@@ -79,20 +79,20 @@ describe "enable rss" do
 
   it "should be core from numa0" do
     data = enable_rss_numa_per_core(0)
-    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["0000200000", 21])
-    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["0000000010", 4])
+    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["0000200000", [21]])
+    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["0000000010", [4]])
   end
   it "should be core from numa1" do
     data = enable_rss_numa_per_core(1)
-    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["0080000000", 31])
-    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["0000004000", 14])
+    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["0080000000", [31]])
+    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["0000004000", [14]])
   end
 
 
   it "should be core from numa 0 & 1" do
     data = enable_rss_numa_per_core(-1)
-    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["0080000000", 31])
-    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["0000000010", 4])
+    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["0080000000", [31]])
+    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["0000000010", [4]])
   end
 
 

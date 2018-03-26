@@ -306,53 +306,7 @@ module LinuxRxTune # :nodoc:
 
 
 
-    def enable_rps_numa0
-      data = {}
-      numa0_cores_hex = get_numa0_hex
-      numa0_cores_str = get_numa0_str
-      get_ifaces.each do |i|
-        irqs = LinuxRxTune.nic_irqs[i]
-        cidx = 0
-        irqs.each_index  do |idx|
-          cidx = 0 if cidx == numa0_cores_hex.length
-          data["/sys/class/net/#{i}/queues/rx-#{idx}/rps_cpus"] = [ numa0_cores_hex[cidx], numa0_cores_str[cidx] ]
-          cidx+=1
-        end
-      end
-      data
-    end
 
-    def enable_xps_numa0
-      data = {}
-      numa0_cores_hex = get_numa0_hex
-      numa0_cores_str = get_numa0_str
-      get_ifaces.each do |i|
-        irqs = LinuxRxTune.nic_irqs[i]
-        cidx = 0
-        irqs.each_index  do |idx|
-          cidx = 0 if cidx == numa0_cores_hex.length
-          data["/sys/class/net/#{i}/queues/tx-#{idx}/xps_cpus"] = [ numa0_cores_hex[cidx] , numa0_cores_str[cidx] ]
-          cidx+=1
-        end
-      end
-      data
-    end
-
-    def enable_xps_numa1
-      data = {}
-      numa1_cores_hex = get_numa1_hex
-      numa1_cores_str = get_numa1_str
-      get_ifaces.each do |i|
-        irqs = LinuxRxTune.nic_irqs[i]
-        cidx = 0
-        irqs.each_index  do |idx|
-          cidx = 0 if cidx == numa1_cores_hex.length
-          data["/sys/class/net/#{i}/queues/tx-#{idx}/xps_cpus"] = [ numa1_cores_hex[cidx] , numa1_cores_str[cidx] ]
-          cidx+=1
-        end
-      end
-      data
-    end
 
 
 
@@ -424,8 +378,9 @@ module LinuxRxTune # :nodoc:
       data.each do | iface, irq_info|
         puts "# setting up first NIC #{iface}"
         irq_info.each do |smp_affinity, cpu_maps|
+          puts
           puts "# setting up #{iface} to cores #{cpu_maps[1].join(',')} "
-          puts "#{smp_affinity} > #{cpu_maps[0]}"
+          puts "echo #{cpu_maps[0]} >  #{smp_affinity} "
         end
       end
 
