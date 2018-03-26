@@ -127,7 +127,7 @@ module LinuxRxTune # :nodoc:
       def get_numa_cores(n)
         t = LinuxRxTune.cpu_topology
         cores = []
-        t.keys.each { |i|  cores.push(i) if t[i][:numa_node] == n }
+        t.each_index { |i|  cores.push(i) if t[i][:numa_node] == n }
         return cores
       end
 
@@ -428,7 +428,6 @@ module LinuxRxTune # :nodoc:
     global_options
     core_options
     def set_rss
-
       # all cores on single NUMA
       #
 
@@ -438,43 +437,17 @@ module LinuxRxTune # :nodoc:
         data = enable_rss_numa_per_core(options[:numa])
       end
 
-
-
-
-
-
+      data.each do | iface, irq_info|
+        puts "# setting up first NIC #{iface}"
+        irq_info.each do |smp_affinity, cpu_maps|
+          puts "# setting up #{iface} to cores #{cpu_maps[1].join(',')} "
+          puts "#{smp_affinity} > #{cpu_maps[0]}"
+        end
+      end
     end
 
 
 
-    desc 'enable_rss', 'Wrap both function one and two'
-    global_options
-    def enable_rss
-
-      read_cpu_topoogy
-      scan_proc_interrupts
-
-
-
-      enable_rss_numa0.each do |k,v|
-        #cur = IO.read(k)
-        #LinuxRxTune.logger.info("#{k} #{v} #{cur}")
-        puts "#SHELL RSS core #{v[1]} | echo #{v[0]} > #{k}"
-        puts "#SHELL RSS core numa0 | echo 00,1ff803ff > #{k}"
-      end
-
-      enable_rps_numa0.each do |k,v|
-        puts "#SHELL RPS core #{v[1]} | echo #{v[0]} > #{k}"
-        puts "#SHELL RPS core numa0 | echo 00,1ff803ff > #{k}"
-      end
-
-      enable_xps_numa1.each do |k,v|
-        puts "#SHELL XPS core #{v[1]} | echo #{v[0]} > #{k}"
-      end
-
-
-
-    end
   end
 end
 
