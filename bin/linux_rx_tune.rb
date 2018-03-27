@@ -381,7 +381,8 @@ module LinuxRxTune # :nodoc:
         puts "# setting up first NIC #{iface}"
         irq_info.each do |smp_affinity, cpu_maps|
           puts
-          puts "# setting up #{iface} to cores #{cpu_maps[1].join(',')} "
+          puts "echo setting up #{iface} to cores #{cpu_maps[1].join(',')} "
+          puts "sleep 1"
           puts "echo #{cpu_maps[0]} >  #{smp_affinity} "
         end
       end
