@@ -50,8 +50,8 @@ describe '#conversions' do
     expect(bin_to_cores('0000000000100000000000000000001000000000')).to eq([10,30])
     expect(bin_to_cores('1111111111111111111111111111111111111111')).to eq([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40])
     expect(cores_to_bin([10,30],40)).to eq('0000000001000000000000000000010000000000')
-    expect(core_list_to_hexmap([10,30],40)).to eq('0040000400')
-    expect(core_list_to_hexmap([1,38],40)).to eq('4000000002')
+    expect(core_list_to_hexmap([10,30],40)).to eq('00,40000400')
+    expect(core_list_to_hexmap([1,38],40)).to eq('40,00000002')
     expect(hexmap_to_core_list('00,00000001',40)).to eq([[1], []])
   end
 end
@@ -81,36 +81,36 @@ describe "enable rss" do
 
   it "should be core from numa0" do
     data = enable_rss_numa_per_core(0)
-    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["0000200000", [21]])
-    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["0000000010", [4]])
+    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["00,00200000", [21]])
+    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["00,00000010", [4]])
   end
   it "should be core from numa1" do
     data = enable_rss_numa_per_core(1)
-    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["0080000000", [31]])
-    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["0000004000", [14]])
+    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["00,80000000", [31]])
+    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["00,00004000", [14]])
   end
 
 
   it "should be core from numa 0 & 1" do
     data = enable_rss_numa_per_core(-1)
-    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["0080000000", [31]])
-    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["0000000010", [4]])
+    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["00,80000000", [31]])
+    expect(data['enp2s0f1']['/proc/irq/116/smp_affinity']).to eq(["00,00000010", [4]])
   end
 
 
   it "should be all cores from numa0" do
     data = enable_rss_numa_all_cores(0)
-    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["003ff003ff", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]])
+    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["00,3ff003ff", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]])
   end
 
   it "should be all cores from numa1" do
     data = enable_rss_numa_all_cores(1)
-    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["ffc00ffc00", [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]])
+    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["ff,c00ffc00", [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]])
   end
 
   it "should be all cores from numa 0 & 1" do
     data = enable_rss_numa_all_cores(-1)
-    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["ffffffffff", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]])
+    expect(data['enp2s0f0']['/proc/irq/101/smp_affinity']).to eq(["ff,ffffffff", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]])
   end
 
 end

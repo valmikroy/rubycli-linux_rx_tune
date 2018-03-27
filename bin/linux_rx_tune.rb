@@ -98,7 +98,8 @@ module LinuxRxTune # :nodoc:
 
       def core_list_to_hexmap(cores=[],core_cnt)
        b = cores_to_bin(cores,core_cnt)
-       return sprintf("%.#{core_cnt/4}x",b.to_i(2))
+       h = sprintf("%.#{core_cnt/4}x",b.to_i(2))
+       return h.gsub(/^(\w{2})/,'\1,')
       end
 
 
