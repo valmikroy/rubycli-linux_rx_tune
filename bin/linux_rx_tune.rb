@@ -34,88 +34,75 @@ module LinuxRxTune # :nodoc:
       @source_root ||= Pathname.new(File.expand_path('../../', __FILE__))
     end
 
-
     def set_kernelfs
-     @sysfs_path = ENV['SYSFS'] ?   ENV['SYSFS'] : '/sys'
-     @procfs_path = ENV['PROCFS'] ? ENV['PROCFS'] : '/proc'
+      @sysfs_path = ENV['SYSFS'] ? ENV['SYSFS'] : '/sys'
+      @procfs_path = ENV['PROCFS'] ? ENV['PROCFS'] : '/proc'
     end
-
-
   end
 
   # Helpers
   module Helper
-
     module Topology
-
-
       def hex_to_dec(cpu_hexmap)
-        cpu_hexmap.gsub!(/,/,'').to_i(16).to_s
+        cpu_hexmap.delete!(',').to_i(16).to_s
       end
 
-      def dec_to_bin(c,core_cnt)
-        sprintf("%0#{core_cnt}b",c.to_i)
+      def dec_to_bin(c, core_cnt)
+        format("%0#{core_cnt}b", c.to_i)
       end
 
-      def dec_to_hex(c,core_cnt)
-        sprintf("%.#{core_cnt/4}x",c.to_i)
+      def dec_to_hex(c, core_cnt)
+        format("%.#{core_cnt / 4}x", c.to_i)
       end
 
       def bin_to_cores(cpu_bitmap)
-          c = cpu_bitmap.split(//)
-          cores = []
-          c.reverse!.each_index {|i| cores.push(i) if c[i] == "1"  }
-          return cores
+        c = cpu_bitmap.split(//)
+        cores = []
+        c.reverse!.each_index { |i| cores.push(i) if c[i] == '1' }
+        cores
       end
 
-
-
-      def get_numa_split(cores=[])
+      def get_numa_split(cores = [])
         numa = []
-        numa[0] = cores.map {|c| c if is_numa0?(c) }
-        numa[1] = cores.map {|c| c if is_numa1?(c) }
+        numa[0] = cores.map { |c| c if is_numa0?(c) }
+        numa[1] = cores.map { |c| c if is_numa1?(c) }
         numa[0].compact!
         numa[1].compact!
-        return numa
+        numa
       end
 
-      def hexmap_to_core_list(cpu_hexmap,core_cnt)
+      def hexmap_to_core_list(cpu_hexmap, core_cnt)
         d = hex_to_dec(cpu_hexmap)
-        b = dec_to_bin(d,core_cnt)
+        b = dec_to_bin(d, core_cnt)
         c = bin_to_cores(b)
-        return get_numa_split(c)
+        get_numa_split(c)
       end
 
-
-      def cores_to_bin(cores=[],core_cnt)
-        c = Array.new(core_cnt,0)
+      def cores_to_bin(cores = [], core_cnt)
+        c = Array.new(core_cnt, 0)
         c.each_index do |i|
           c[i] = 1 if  cores.include?(i)
         end
-        return c.reverse.join('')
+        c.reverse.join('')
       end
 
-
-      def core_list_to_hexmap(cores=[],core_cnt)
-       b = cores_to_bin(cores,core_cnt)
-       h = sprintf("%.#{core_cnt/4}x",b.to_i(2))
-       return h.gsub(/^(\w{2})/,'\1,')
+      def core_list_to_hexmap(cores = [], core_cnt)
+        b = cores_to_bin(cores, core_cnt)
+        h = format("%.#{core_cnt / 4}x", b.to_i(2))
+        h.gsub(/^(\w{2})/, '\1,')
       end
-
-
-
 
       def read_cpu_topology
-        #TODO error check for existence of sysfs path
-        path = [ LinuxRxTune.sysfs_path, 'devices/system/cpu/' ].join('/')
+        # TODO: error check for existence of sysfs path
+        path = [LinuxRxTune.sysfs_path, 'devices/system/cpu/'].join('/')
         Dir.foreach(path) do |cpu|
-          next if  cpu == '.'  || cpu == '..'
+          next if  cpu == '.' || cpu == '..'
           next unless matched = cpu.match(/cpu(?<cpu_number>\d{1,2})/)
 
           data = {
-            :numa_node => IO.read("#{path}/#{cpu}/topology/physical_package_id").to_i,
-            :siblings_hex => IO.read("#{path}/#{cpu}/topology/thread_siblings").chomp,
-            :siblings_str => IO.read("#{path}/#{cpu}/topology/thread_siblings_list").chomp
+            numa_node: IO.read("#{path}/#{cpu}/topology/physical_package_id").to_i,
+            siblings_hex: IO.read("#{path}/#{cpu}/topology/thread_siblings").chomp,
+            siblings_str: IO.read("#{path}/#{cpu}/topology/thread_siblings_list").chomp
           }
           LinuxRxTune.cpu_topology[matched[:cpu_number].to_i] = data.clone
         end
@@ -128,10 +115,9 @@ module LinuxRxTune # :nodoc:
       def get_numa_cores(n)
         t = LinuxRxTune.cpu_topology
         cores = []
-        t.each_index { |i|  cores.push(i) if t[i][:numa_node] == n }
-        return cores
+        t.each_index { |i| cores.push(i) if t[i][:numa_node] == n }
+        cores
       end
-
 
       def get_numa0_cores
         get_numa_cores(0)
@@ -140,7 +126,6 @@ module LinuxRxTune # :nodoc:
       def get_numa1_cores
         get_numa_cores(1)
       end
-
 
       def is_numa0?(c)
         return true if get_numa0_cores.include?(c)
@@ -152,52 +137,43 @@ module LinuxRxTune # :nodoc:
         false
       end
 
-
-
-
-
       #####
       def get_numa0_hex
-        LinuxRxTune.cpu_topology.select { |i|  i[:numa_node] == 0 }.map{ |j| j[:siblings_hex] }
+        LinuxRxTune.cpu_topology.select { |i|  i[:numa_node] == 0 }.map { |j| j[:siblings_hex] }
       end
 
       def get_numa0_str
-        LinuxRxTune.cpu_topology.select { |i|  i[:numa_node] == 0 }.map{ |j| j[:siblings_str] }
+        LinuxRxTune.cpu_topology.select { |i|  i[:numa_node] == 0 }.map { |j| j[:siblings_str] }
       end
 
       def get_numa1_hex
-        LinuxRxTune.cpu_topology.select { |i|  i[:numa_node] == 1 }.map{ |j| j[:siblings_hex] }
+        LinuxRxTune.cpu_topology.select { |i|  i[:numa_node] == 1 }.map { |j| j[:siblings_hex] }
       end
 
       def get_numa1_str
-        LinuxRxTune.cpu_topology.select { |i|  i[:numa_node] == 1 }.map{ |j| j[:siblings_str] }
+        LinuxRxTune.cpu_topology.select { |i|  i[:numa_node] == 1 }.map { |j| j[:siblings_str] }
       end
 
       def get_core_cnt
         LinuxRxTune.cpu_topology.length
       end
-
     end
 
-
     module Affinity
-
-
       # Scanning /proc/interrupts
       # Get existing irqs tied to network interface
-      def scan_proc_interrupts(path = [LinuxRxTune.procfs_path,'interrupts'].join('/'))
+      def scan_proc_interrupts(path = [LinuxRxTune.procfs_path, 'interrupts'].join('/'))
         File.readlines(path).each do |l|
           l.chomp!
-          next  unless m = l.match(/^\s+?(?<irq>\d+?):.*?(?<iface>enp2s\d\w\d).+?(?<ch>\d+)$/)
+          next unless m = l.match(/^\s+?(?<irq>\d+?):.*?(?<iface>enp2s\d\w\d).+?(?<ch>\d+)$/)
           data = {
-             :interface => m[:iface],
-             :channel  => m[:ch]
+            interface: m[:iface],
+            channel: m[:ch]
           }
           LinuxRxTune.nic_irqs[m[:iface]] = [] if LinuxRxTune.nic_irqs[m[:iface]].nil?
           LinuxRxTune.nic_irqs[m[:iface]][m[:ch].to_i] = m[:irq].to_i
         end
       end
-
 
       def get_ifaces
         LinuxRxTune.nic_irqs.keys
@@ -208,73 +184,64 @@ module LinuxRxTune # :nodoc:
       end
 
       def get_irq_cpu_map(irq)
-        IO.read( [LinuxRxTune.procfs_path, 'irq', irq, 'smp_affinity' ].join('/') ).chomp!
+        IO.read([LinuxRxTune.procfs_path, 'irq', irq, 'smp_affinity'].join('/')).chomp!
       end
-
     end
-
 
     include Affinity
     include Topology
 
-
     def show_net_affinity
-
       report = []
 
-      nic_irqs =  LinuxRxTune.nic_irqs
+      nic_irqs = LinuxRxTune.nic_irqs
 
+      report.push(format("%10s\t%3s\t%4s\t%20s\t%20s", 'iface', 'ch', 'irq', 'numa0', 'numa1'))
+      nic_irqs.each do |iface, _v|
+        nic_irqs[iface].each_index do |net_ch|
+          irq = nic_irqs[iface][net_ch]
+          cpu_map = get_irq_cpu_map(irq)
+          c = hexmap_to_core_list(cpu_map, number_of_cores)
 
-      report.push(sprintf("%10s\t%3s\t%4s\t%20s\t%20s",'iface','ch','irq','numa0','numa1' ))
-      nic_irqs.each do |iface,_v|
-       nic_irqs[iface].each_index  do |net_ch|
-         irq = nic_irqs[iface][net_ch]
-         cpu_map = get_irq_cpu_map(irq)
-         c = hexmap_to_core_list(cpu_map,number_of_cores)
-
-         report.push(sprintf("%10s\t%3d\t%4d\t%20s\t%20s",iface,net_ch,irq,
-                             c[0].length == 0 ? "-" : c[0].join(","),
-                             c[1].length == 0 ? "-" :c[1].join(",")))
-       end
+          report.push(format("%10s\t%3d\t%4d\t%20s\t%20s", iface, net_ch, irq,
+                             c[0].empty? ? '-' : c[0].join(','),
+                             c[1].empty? ? '-' : c[1].join(',')))
+        end
       end
-      #IO.write("/Users/abhsawan/report.out" ,report.join("\n"))
+      # IO.write("/Users/abhsawan/report.out" ,report.join("\n"))
       report.join("\n")
-
     end
 
-
-    def assign_affinity(cores=[],irqs=[],core_cnt)
+    def assign_affinity(cores = [], irqs = [], core_cnt)
       data = {}
-        cidx = 0
-        irqs.each_index do |i|
-          cidx = 0 if cidx == cores.length
-          hex = core_list_to_hexmap([ cores[cidx] ],core_cnt)
-          data["/proc/irq/#{irqs[i]}/smp_affinity"] = [ hex , [cores[cidx]] ]
-          cidx+=1
-        end
+      cidx = 0
+      irqs.each_index do |i|
+        cidx = 0 if cidx == cores.length
+        hex = core_list_to_hexmap([cores[cidx]], core_cnt)
+        data["/proc/irq/#{irqs[i]}/smp_affinity"] = [hex, [cores[cidx]]]
+        cidx += 1
+      end
       data
     end
-
 
     def enable_rss_numa_per_core(numa)
       data = {}
       cores = []
       case numa
-        when 0
-          cores = get_numa0_cores
-        when 1
-          cores = get_numa1_cores
-        when -1
-          cores.push(get_numa0_cores)
-          cores.push(get_numa1_cores)
-          cores.flatten!
-        else
-          warn("NUMA node values should be 0 , 1 or -1")
+      when 0
+        cores = get_numa0_cores
+      when 1
+        cores = get_numa1_cores
+      when -1
+        cores.push(get_numa0_cores)
+        cores.push(get_numa1_cores)
+        cores.flatten!
+      else
+        warn('NUMA node values should be 0 , 1 or -1')
       end
 
-
       get_ifaces.each do |i|
-        data[i] = assign_affinity(cores,get_network_irqs(i),number_of_cores)
+        data[i] = assign_affinity(cores, get_network_irqs(i), number_of_cores)
       end
       data
     end
@@ -283,36 +250,27 @@ module LinuxRxTune # :nodoc:
       data = {}
       cores = []
       case numa
-        when 0
-          cores = get_numa0_cores
-        when 1
-          cores = get_numa1_cores
-        when -1
-          cores.push(get_numa0_cores)
-          cores.push(get_numa1_cores)
-          cores.flatten!
-        else
-          warn("NUMA node values should be 0 , 1 or -1")
+      when 0
+        cores = get_numa0_cores
+      when 1
+        cores = get_numa1_cores
+      when -1
+        cores.push(get_numa0_cores)
+        cores.push(get_numa1_cores)
+        cores.flatten!
+      else
+        warn('NUMA node values should be 0 , 1 or -1')
       end
-      hex = core_list_to_hexmap(cores,number_of_cores)
+      hex = core_list_to_hexmap(cores, number_of_cores)
       get_ifaces.each do |i|
         irqs = get_network_irqs(i)
         data[i] = {}
         irqs.each do |irq|
-          data[i]["/proc/irq/#{irq}/smp_affinity"] = [ hex, cores ]
+          data[i]["/proc/irq/#{irq}/smp_affinity"] = [hex, cores]
         end
       end
       data
     end
-
-
-
-
-
-
-
-
-
   end
 
   # CLI
@@ -327,20 +285,18 @@ module LinuxRxTune # :nodoc:
                     default: false
     end
 
-
     def self.core_options
       method_option :numa,
-                    aliases: ['-n','--numa'],
+                    aliases: ['-n', '--numa'],
                     desc: 'Numa to configure',
                     type: :numeric,
                     default: 0
       method_option :all_cores,
-                    aliases: ['-a','--all_cores'],
+                    aliases: ['-a', '--all_cores'],
                     desc: 'Consider all cores on given numa',
                     type: :boolean,
                     default: false
     end
-
 
     # enable_rss --numa 0 --per_core (disable irq balance)
     # enable_rss --numa 0 --entire_numa
@@ -371,14 +327,13 @@ module LinuxRxTune # :nodoc:
       scan_proc_interrupts
       read_cpu_topology
 
-      if options[:all_cores]
-        data = enable_rss_numa_all_cores(options[:numa])
-      else
-        data = enable_rss_numa_per_core(options[:numa])
-      end
+      data = if options[:all_cores]
+               enable_rss_numa_all_cores(options[:numa])
+             else
+               enable_rss_numa_per_core(options[:numa])
+             end
 
-
-      data.each do | iface, irq_info|
+      data.each do |iface, irq_info|
         puts "# setting up first NIC #{iface}"
         irq_info.each do |smp_affinity, cpu_maps|
           puts
@@ -386,15 +341,9 @@ module LinuxRxTune # :nodoc:
           puts "echo #{cpu_maps[0]} >  #{smp_affinity} "
         end
       end
-
-
     end
-
-
-
   end
 end
-
 
 LinuxRxTune.verbose = ENV['VERBOSE'] ? true : false
 LinuxRxTune.logger = LinuxRxTune.default_logger
@@ -402,7 +351,6 @@ LinuxRxTune.set_kernelfs
 
 LinuxRxTune.cpu_topology = []
 LinuxRxTune.nic_irqs = {}
-
 
 # check if its linux
 # check for directory  /sys/devices/system/cpu/cpu\d{1,2}

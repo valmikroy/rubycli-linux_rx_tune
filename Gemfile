@@ -11,8 +11,8 @@ group :build do
   gem 'rspec-core'
 end
 group :development do
+  gem 'rake-notes'
   gem 'rspec'
   gem 'rubocop'
   gem 'rubocop-rspec'
-  gem 'rake-notes'
 end
