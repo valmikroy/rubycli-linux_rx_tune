@@ -383,7 +383,6 @@ module LinuxRxTune # :nodoc:
         irq_info.each do |smp_affinity, cpu_maps|
           puts
           puts "echo setting up #{iface} to cores #{cpu_maps[1].join(',')}  ,  #{cpu_maps[0]}   #{smp_affinity}  "
-          puts "sleep 1"
           puts "echo #{cpu_maps[0]} >  #{smp_affinity} "
         end
       end
