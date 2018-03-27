@@ -64,7 +64,7 @@ module LinuxRxTune # :nodoc:
       def bin_to_cores(cpu_bitmap)
           c = cpu_bitmap.split(//)
           cores = []
-          c.reverse.each_index {|i| cores.push(i) if c[i] == "1"  }
+          c.reverse!.each_index {|i| cores.push(i+1) if c[i] == "1"  }
           return cores
       end
 
@@ -236,7 +236,9 @@ module LinuxRxTune # :nodoc:
                              c[1].length == 0 ? "-" :c[1].join(",")))
        end
       end
+      IO.write("/Users/abhsawan/report.out" ,report.join("\n"))
       report.join("\n")
+
     end
 
 
