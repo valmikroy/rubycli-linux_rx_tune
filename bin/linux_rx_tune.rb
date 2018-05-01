@@ -40,16 +40,9 @@ module LinuxRxTune # :nodoc:
     end
   end
 
-
-
-
-
-
-
   # Helpers
   module Helper
     module Topology
-
       #
       # Parse CPU topology
       # reading /sys/devices/system/cpu/cpu0/*
@@ -61,13 +54,13 @@ module LinuxRxTune # :nodoc:
         # TODO: error check for existence of sysfs path
         path = [LinuxRxTune.sysfs_path, 'devices/system/cpu/'].join('/')
         Dir.foreach(path) do |cpu|
-          next if  cpu == '.' || cpu == '..'
+          next if cpu == '.' || cpu == '..'
           next unless matched = cpu.match(/cpu(?<cpu_number>\d{1,2})/)
 
           data = {
-              numa_node: IO.read("#{path}/#{cpu}/topology/physical_package_id").to_i,
-              siblings_hex: IO.read("#{path}/#{cpu}/topology/thread_siblings").chomp,
-              siblings_str: IO.read("#{path}/#{cpu}/topology/thread_siblings_list").chomp
+            numa_node: IO.read("#{path}/#{cpu}/topology/physical_package_id").to_i,
+            siblings_hex: IO.read("#{path}/#{cpu}/topology/thread_siblings").chomp,
+            siblings_str: IO.read("#{path}/#{cpu}/topology/thread_siblings_list").chomp
           }
           LinuxRxTune.cpu_topology[matched[:cpu_number].to_i] = data.clone
         end
@@ -126,17 +119,28 @@ module LinuxRxTune # :nodoc:
         numa
       end
 
-
-
-
-
+      def select_numa_core(numa)
+        cores = []
+        case numa
+        when 0
+          cores = get_numa0_cores
+        when 1
+          cores = get_numa1_cores
+        when -1
+          cores.push(get_numa0_cores)
+          cores.push(get_numa1_cores)
+          cores.flatten!
+        else
+          warn('NUMA node values should be 0 , 1 or -1')
+        end
+        cores
+      end
 
       # CPU bitmap or hexmap is only way you can configure various kernel tuneups
       # ex.
       #   on 4 core system
       #     Zero th core will be represented as 0001
       #     First core will be represented as 0010
-
 
       #
       # Functions cores_to_bin and core_list_to_hexmap could be consider as
@@ -160,11 +164,10 @@ module LinuxRxTune # :nodoc:
       def cores_to_bin(cores = [], core_cnt)
         c = Array.new(core_cnt, 0)
         c.each_index do |i|
-          c[i] = 1 if  cores.include?(i)
+          c[i] = 1 if cores.include?(i)
         end
         c.reverse.join('')
       end
-
 
       #
       # once above bitmap gets created by core positions
@@ -175,14 +178,6 @@ module LinuxRxTune # :nodoc:
         h = format("%.#{core_cnt / 4}x", b.to_i(2))
         h.gsub(/^(\w{2})/, '\1,')
       end
-
-
-
-
-
-
-
-
 
       # Reverse functions which gives you cores in human readable format from given hexmap
       # - convert hexmap to decimal
@@ -208,36 +203,18 @@ module LinuxRxTune # :nodoc:
         cores
       end
 
-
       def hexmap_to_core_list(cpu_hexmap, core_cnt)
         d = hex_to_dec(cpu_hexmap)
         b = dec_to_bin(d, core_cnt)
         c = bin_to_cores(b)
         get_numa_split(c)
       end
-
     end
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     # Affinity module holds various functions which involve in adjusting CPU topologies
     # for efficient low level network IRQ handling
 
-
-
     module Affinity
-
       #
       # - look for network card line like following in /proc/interrupts
       #   80:          0          0    1602770  ....  IR-PCI-MSI 1048586-edge      enp2s0f0-TxRx-10
@@ -296,15 +273,17 @@ module LinuxRxTune # :nodoc:
       end
     end
 
-    include Affinity
-    include Topology
+    # include Affinity
+    # include Topology
+  end
 
+  module RSS
+    include Helper
 
     # Print affinity map
     #
     # <network iface> <network channel> <IRQ>  <NUMA0 CPU core>   <NUMA1 CPU core>
     #
-
 
     def show_net_affinity
       report = []
@@ -313,9 +292,7 @@ module LinuxRxTune # :nodoc:
       report.push(format("%10s\t%3s\t%4s\t%20s\t%20s", 'iface', 'ch', 'irq', 'numa0', 'numa1'))
 
       nic_irqs.each do |iface, _v|
-
         nic_irqs[iface].each_index do |net_ch|
-
           irq = nic_irqs[iface][net_ch]
           cpu_map = get_irq_cpu_map(irq)
           c = hexmap_to_core_list(cpu_map, number_of_cores)
@@ -324,13 +301,10 @@ module LinuxRxTune # :nodoc:
                              c[0].empty? ? '-' : c[0].join(','),
                              c[1].empty? ? '-' : c[1].join(',')))
         end
-
       end
       # IO.write("/Users/abhsawan/report.out" ,report.join("\n"))
       report.join("\n")
     end
-
-
 
     #
     # This creates hexmap of given CPU cores to update /proc/IRQ/smp_affinity for specific network channel
@@ -351,7 +325,7 @@ module LinuxRxTune # :nodoc:
     # @return [Hash] data
     #  data['/proc/irq/<IRQ>/smp_affinity'] = [<cpu_hexmap>,[<numeric core array>]]
     #
-    def assign_affinity(cores = [], irqs = [], core_cnt)
+    def assign_rss_affinity(cores = [], irqs = [], core_cnt)
       data = {}
       cidx = 0
       irqs.each_index do |i|
@@ -363,7 +337,6 @@ module LinuxRxTune # :nodoc:
       data
     end
 
-
     # Creates affinity map based on selecting cores from given NUMA node.
     #
     # This assign single core per individual irq
@@ -374,26 +347,12 @@ module LinuxRxTune # :nodoc:
     #
     def enable_rss_numa_per_core(numa)
       data = {}
-      cores = []
-      case numa
-      when 0
-        cores = get_numa0_cores
-      when 1
-        cores = get_numa1_cores
-      when -1
-        cores.push(get_numa0_cores)
-        cores.push(get_numa1_cores)
-        cores.flatten!
-      else
-        warn('NUMA node values should be 0 , 1 or -1')
-      end
-
+      cores = select_numa_core(numa)
       get_ifaces.each do |i|
-        data[i] = assign_affinity(cores, get_network_irqs(i), number_of_cores)
+        data[i] = assign_rss_affinity(cores, get_network_irqs(i), number_of_cores)
       end
       data
     end
-
 
     # Create affinity map on selecting cores from given NUMA node
     #
@@ -402,19 +361,7 @@ module LinuxRxTune # :nodoc:
     #
     def enable_rss_numa_all_cores(numa)
       data = {}
-      cores = []
-      case numa
-      when 0
-        cores = get_numa0_cores
-      when 1
-        cores = get_numa1_cores
-      when -1
-        cores.push(get_numa0_cores)
-        cores.push(get_numa1_cores)
-        cores.flatten!
-      else
-        warn('NUMA node values should be 0 , 1 or -1')
-      end
+      cores = select_numa_core(numa)
       hex = core_list_to_hexmap(cores, number_of_cores)
       get_ifaces.each do |i|
         irqs = get_network_irqs(i)
@@ -425,7 +372,44 @@ module LinuxRxTune # :nodoc:
       end
       data
     end
+  end
 
+  module XPS
+    include Helper
+
+    def assign_xps_affinity(cores = [], iface, core_cnt)
+      data = {}
+      cidx = 0
+      (0...(number_of_cores - 1)).each do |c|
+        cidx = 0 if cidx == cores.length
+        hex = core_list_to_hexmap([cores[cidx]], core_cnt)
+        data["/sys/class/net/#{iface}/queues/tx-#{c}"] = [hex, [cores[cidx]]]
+        cidx += 1
+      end
+      data
+    end
+
+    def enable_xps_numa_per_core(numa)
+      data = {}
+      cores = select_numa_core(numa)
+      get_ifaces.each do |iface|
+        data[iface] = assign_xps_affinity(cores, iface, number_of_cores)
+      end
+      data
+    end
+
+    def enable_xps_numa_all_cores(numa)
+      data = {}
+      cores = select_numa_core(numa)
+      hex = core_list_to_hexmap(cores, number_of_cores)
+      get_ifaces.each do |iface|
+        data[iface] = {}
+        (0...(number_of_cores - 1)).each do |c|
+          data[iface]["/sys/class/net/#{iface}/queues/tx-#{c}"] = [hex, cores]
+        end
+      end
+      data
+    end
   end
 
   # CLI
@@ -470,6 +454,7 @@ module LinuxRxTune # :nodoc:
     desc 'show_rss', 'Show existing RSS settings'
     global_options
     def show_rss
+      include RSS
       scan_proc_interrupts
       read_cpu_topology
       puts show_net_affinity
@@ -479,6 +464,7 @@ module LinuxRxTune # :nodoc:
     global_options
     core_options
     def set_rss
+      include RSS
       scan_proc_interrupts
       read_cpu_topology
 
@@ -498,8 +484,27 @@ module LinuxRxTune # :nodoc:
       end
     end
 
+    desc 'set_xps', 'Set XPS for TX queues'
+    global_options
+    core_options
+    def set_xps
+      include XPS
+      read_cpu_topology
+      data = if options[:all_cores]
+               enable_xps_numa_all_cores(options[:numa])
+             else
+               enable_xps_numa_per_core(options[:numa])
+             end
 
-
+      data.each do |iface, _tx_info|
+        puts "# setting up first NIC #{iface}"
+        irq_info.each do |xps_affinity, cpu_maps|
+          puts
+          puts "echo setting up #{iface} to cores #{cpu_maps[1].join(',')}  ,  #{cpu_maps[0]}   #{xps_affinity}  "
+          puts "echo #{cpu_maps[0]} >  #{xps_affinity} "
+        end
+      end
+    end
   end
 end
 
