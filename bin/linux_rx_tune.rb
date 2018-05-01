@@ -380,7 +380,7 @@ module LinuxRxTune # :nodoc:
     def assign_xps_affinity(cores = [], iface, core_cnt)
       data = {}
       cidx = 0
-      (0...(number_of_cores - 1)).each do |c|
+      (0...number_of_cores).each do |c|
         cidx = 0 if cidx == cores.length
         hex = core_list_to_hexmap([cores[cidx]], core_cnt)
         data["/sys/class/net/#{iface}/queues/tx-#{c}/xps_cpus"] = [hex, [cores[cidx]]]
