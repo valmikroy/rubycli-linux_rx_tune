@@ -52,7 +52,7 @@ describe 'RSS report' do
     read_cpu_topology
   end
   it 'report' do
-    expect(show_net_affinity).to eq(IO.read([LinuxRxTune.source_root, 'spec', 'fixtures', 'report_net_affinity.txt'].join('/')))
+    expect(show_rss_affinity).to eq(IO.read([LinuxRxTune.source_root, 'spec', 'fixtures', 'report_net_affinity.txt'].join('/')))
   end
 end
 
@@ -107,39 +107,39 @@ describe 'enable xps' do
 
   it 'should be core from numa0' do
     data = enable_xps_numa_per_core(0)
-    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0']).to eq(['00,00000001', [0]])
-    expect(data['enp2s0f1']['/sys/class/net/enp2s0f1/queues/tx-0']).to eq(['00,00000001', [0]])
-    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-11']).to eq(['00,00200000', [21]])
-    expect(data['enp2s0f1']['/sys/class/net/enp2s0f1/queues/tx-30']).to eq(['00,00100000', [20]])
+    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0/xps_cpus']).to eq(['00,00000001', [0]])
+    expect(data['enp2s0f1']['/sys/class/net/enp2s0f1/queues/tx-0/xps_cpus']).to eq(['00,00000001', [0]])
+    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-11/xps_cpus']).to eq(['00,00200000', [21]])
+    expect(data['enp2s0f1']['/sys/class/net/enp2s0f1/queues/tx-30/xps_cpus']).to eq(['00,00100000', [20]])
   end
 
   it 'should be core from numa1' do
     data = enable_xps_numa_per_core(1)
-    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0']).to eq(['00,00000400', [10]])
-    expect(data['enp2s0f1']['/sys/class/net/enp2s0f1/queues/tx-0']).to eq(['00,00000400', [10]])
-    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-11']).to eq(['00,80000000', [31]])
-    expect(data['enp2s0f1']['/sys/class/net/enp2s0f1/queues/tx-30']).to eq(['00,40000000', [30]])
+    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0/xps_cpus']).to eq(['00,00000400', [10]])
+    expect(data['enp2s0f1']['/sys/class/net/enp2s0f1/queues/tx-0/xps_cpus']).to eq(['00,00000400', [10]])
+    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-11/xps_cpus']).to eq(['00,80000000', [31]])
+    expect(data['enp2s0f1']['/sys/class/net/enp2s0f1/queues/tx-30/xps_cpus']).to eq(['00,40000000', [30]])
   end
 
   it 'should be core from numa 0 & 1' do
     data = enable_xps_numa_per_core(-1)
-    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0']).to eq(['00,00000001', [0]])
-    expect(data['enp2s0f1']['/sys/class/net/enp2s0f1/queues/tx-30']).to eq(['00,40000000', [30]])
+    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0/xps_cpus']).to eq(['00,00000001', [0]])
+    expect(data['enp2s0f1']['/sys/class/net/enp2s0f1/queues/tx-30/xps_cpus']).to eq(['00,40000000', [30]])
   end
 
   it 'should be all cores from numa0' do
     data = enable_xps_numa_all_cores(0)
-    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0']).to eq(['00,3ff003ff', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]])
+    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0/xps_cpus']).to eq(['00,3ff003ff', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]])
   end
 
   it 'should be all cores from numa1' do
     data = enable_xps_numa_all_cores(1)
-    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0']).to eq(['ff,c00ffc00', [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]])
+    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0/xps_cpus']).to eq(['ff,c00ffc00', [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]])
   end
 
   it 'should be all cores from numa 0 & 1' do
     data = enable_xps_numa_all_cores(-1)
-    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0']).to eq(['ff,ffffffff', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]])
+    expect(data['enp2s0f0']['/sys/class/net/enp2s0f0/queues/tx-0/xps_cpus']).to eq(['ff,ffffffff', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]])
   end
 end
 

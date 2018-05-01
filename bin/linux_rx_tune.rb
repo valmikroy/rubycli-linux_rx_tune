@@ -285,7 +285,7 @@ module LinuxRxTune # :nodoc:
     # <network iface> <network channel> <IRQ>  <NUMA0 CPU core>   <NUMA1 CPU core>
     #
 
-    def show_net_affinity
+    def show_rss_affinity
       report = []
       nic_irqs = LinuxRxTune.nic_irqs
 
@@ -459,7 +459,7 @@ module LinuxRxTune # :nodoc:
     def show_rss
       scan_proc_interrupts
       read_cpu_topology
-      puts show_net_affinity
+      puts show_rss_affinity
     end
 
     desc 'set_rss', 'Set RSS for existing channels'
