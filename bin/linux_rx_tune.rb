@@ -383,7 +383,7 @@ module LinuxRxTune # :nodoc:
       (0...(number_of_cores - 1)).each do |c|
         cidx = 0 if cidx == cores.length
         hex = core_list_to_hexmap([cores[cidx]], core_cnt)
-        data["/sys/class/net/#{iface}/queues/tx-#{c}"] = [hex, [cores[cidx]]]
+        data["/sys/class/net/#{iface}/queues/tx-#{c}/xps_cpus"] = [hex, [cores[cidx]]]
         cidx += 1
       end
       data
@@ -405,7 +405,7 @@ module LinuxRxTune # :nodoc:
       get_ifaces.each do |iface|
         data[iface] = {}
         (0...(number_of_cores - 1)).each do |c|
-          data[iface]["/sys/class/net/#{iface}/queues/tx-#{c}"] = [hex, cores]
+          data[iface]["/sys/class/net/#{iface}/queues/tx-#{c}/xps_cpus"] = [hex, cores]
         end
       end
       data
@@ -489,6 +489,7 @@ module LinuxRxTune # :nodoc:
     global_options
     core_options
     def set_xps
+      scan_proc_interrupts
       read_cpu_topology
       data = if options[:all_cores]
                enable_xps_numa_all_cores(options[:numa])
