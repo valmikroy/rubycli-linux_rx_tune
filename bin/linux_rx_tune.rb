@@ -261,6 +261,7 @@ module LinuxRxTune # :nodoc:
         LinuxRxTune.nic_irqs[iface]
       end
 
+
       #
       # @param [Integer] irq
       #   IRQ number
@@ -380,7 +381,8 @@ module LinuxRxTune # :nodoc:
     def assign_xps_affinity(cores = [], iface, core_cnt)
       data = {}
       cidx = 0
-      (0...number_of_cores).each do |c|
+      network_ch_cnt = get_network_irqs(iface).length
+      (0...network_ch_cnt).each do |c|
         cidx = 0 if cidx == cores.length
         hex = core_list_to_hexmap([cores[cidx]], core_cnt)
         data["/sys/class/net/#{iface}/queues/tx-#{c}/xps_cpus"] = [hex, [cores[cidx]]]
@@ -403,8 +405,9 @@ module LinuxRxTune # :nodoc:
       cores = select_numa_core(numa)
       hex = core_list_to_hexmap(cores, number_of_cores)
       get_ifaces.each do |iface|
+        network_ch_cnt = get_network_irqs(iface).length
         data[iface] = {}
-        (0...(number_of_cores - 1)).each do |c|
+        (0...network_ch_cnt).each do |c|
           data[iface]["/sys/class/net/#{iface}/queues/tx-#{c}/xps_cpus"] = [hex, cores]
         end
       end
