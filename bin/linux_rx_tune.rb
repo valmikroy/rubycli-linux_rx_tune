@@ -457,7 +457,6 @@ module LinuxRxTune # :nodoc:
     desc 'show_rss', 'Show existing RSS settings'
     global_options
     def show_rss
-      include RSS
       scan_proc_interrupts
       read_cpu_topology
       puts show_net_affinity
@@ -467,7 +466,6 @@ module LinuxRxTune # :nodoc:
     global_options
     core_options
     def set_rss
-      include RSS
       scan_proc_interrupts
       read_cpu_topology
 
@@ -491,7 +489,6 @@ module LinuxRxTune # :nodoc:
     global_options
     core_options
     def set_xps
-      include XPS
       read_cpu_topology
       data = if options[:all_cores]
                enable_xps_numa_all_cores(options[:numa])
