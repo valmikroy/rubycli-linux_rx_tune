@@ -414,7 +414,10 @@ module LinuxRxTune # :nodoc:
 
   # CLI
   class CLI < Thor
-    include Helper
+    include LinuxRxTune::Helper::Topology
+    include LinuxRxTune::Helper::Affinity
+    include LinuxRxTune::RSS
+    include LinuxRxTune::XPS
 
     def self.global_options
       method_option :verbose,
@@ -496,9 +499,9 @@ module LinuxRxTune # :nodoc:
                enable_xps_numa_per_core(options[:numa])
              end
 
-      data.each do |iface, _tx_info|
+      data.each do |iface, tx_info|
         puts "# setting up first NIC #{iface}"
-        irq_info.each do |xps_affinity, cpu_maps|
+        tx_info.each do |xps_affinity, cpu_maps|
           puts
           puts "echo setting up #{iface} to cores #{cpu_maps[1].join(',')}  ,  #{cpu_maps[0]}   #{xps_affinity}  "
           puts "echo #{cpu_maps[0]} >  #{xps_affinity} "
