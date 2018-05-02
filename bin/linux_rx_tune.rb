@@ -521,6 +521,14 @@ module LinuxRxTune # :nodoc:
       end
     end
 
+    desc 'show_xps', 'Show existing XPS settings'
+    global_options
+    def show_xps
+      scan_proc_interrupts
+      read_cpu_topology
+      puts show_xps_affinity
+    end
+
     desc 'set_xps', 'Set XPS for TX queues'
     global_options
     core_options
