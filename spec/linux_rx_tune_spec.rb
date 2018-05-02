@@ -52,7 +52,20 @@ describe 'RSS report' do
     read_cpu_topology
   end
   it 'report' do
-    expect(show_rss_affinity).to eq(IO.read([LinuxRxTune.source_root, 'spec', 'fixtures', 'report_net_affinity.txt'].join('/')))
+    expect(show_rss_affinity).to eq(IO.read([LinuxRxTune.source_root, 'spec', 'fixtures', 'report_rss_affinity.txt'].join('/')))
+  end
+end
+
+describe 'XPS report' do
+  include LinuxRxTune::XPS
+  before(:each) do
+    LinuxRxTune.nic_irqs = {}
+    scan_proc_interrupts([LinuxRxTune.source_root, 'spec', 'fixtures', 'proc_interrupts_10G.txt'].join('/'))
+    LinuxRxTune.cpu_topology = []
+    read_cpu_topology
+  end
+  it 'report' do
+    expect(show_xps_affinity).to eq(IO.read([LinuxRxTune.source_root, 'spec', 'fixtures', 'report_xps_affinity.txt'].join('/')))
   end
 end
 

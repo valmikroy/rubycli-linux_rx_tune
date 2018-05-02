@@ -272,6 +272,10 @@ module LinuxRxTune # :nodoc:
       def get_irq_cpu_map(irq)
         IO.read([LinuxRxTune.procfs_path, 'irq', irq, 'smp_affinity'].join('/')).chomp!
       end
+
+      def get_xps_cpu_map(iface,net_ch)
+        IO.read([LinuxRxTune.sysfs_path, 'class/net', iface, 'queues', "tx-#{net_ch}", 'xps_cpus'].join('/')).chomp!
+      end
     end
 
     # include Affinity
@@ -377,6 +381,35 @@ module LinuxRxTune # :nodoc:
 
   module XPS
     include Helper
+
+    # Print affinity map
+    #
+    # <network iface> <network channel> <IRQ>  <NUMA0 CPU core>   <NUMA1 CPU core>
+    #
+
+    def show_xps_affinity
+      report = []
+
+      nic_irqs = LinuxRxTune.nic_irqs
+
+      report.push(format("%10s\t%3s\t%20s\t%20s", 'iface', 'ch',  'numa0', 'numa1'))
+
+      nic_irqs.each do |iface, _v|
+        nic_irqs[iface].each_index do |net_ch|
+          irq = nic_irqs[iface][net_ch]
+          cpu_map = get_xps_cpu_map(iface,net_ch)
+          c = hexmap_to_core_list(cpu_map, number_of_cores)
+
+          report.push(format("%10s\t%3d\t%20s\t%20s", iface, net_ch,
+                             c[0].empty? ? '-' : c[0].join(','),
+                             c[1].empty? ? '-' : c[1].join(',')))
+        end
+      end
+      IO.write("/Users/abhsawan/report.out" ,report.join("\n"))
+      report.join("\n")
+    end
+
+
 
     def assign_xps_affinity(cores = [], iface, core_cnt)
       data = {}
