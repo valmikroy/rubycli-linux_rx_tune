@@ -405,7 +405,7 @@ module LinuxRxTune # :nodoc:
                              c[1].empty? ? '-' : c[1].join(',')))
         end
       end
-      IO.write("/Users/abhsawan/report.out" ,report.join("\n"))
+      #IO.write("/Users/abhsawan/report.out" ,report.join("\n"))
       report.join("\n")
     end
 
