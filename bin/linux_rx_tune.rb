@@ -229,7 +229,7 @@ module LinuxRxTune # :nodoc:
       def scan_proc_interrupts(path = [LinuxRxTune.procfs_path, 'interrupts'].join('/'))
         File.readlines(path).each do |l|
           l.chomp!
-          next unless m = l.match(/^\s+?(?<irq>\d+?):.*?(?<iface>enp\ds\d\w\d).+?(?<ch>\d+)$/)
+          next unless m = l.match(/^\s+?(?<irq>\d+?):.*?(?<iface>enp\d+s\d\w\d).+?(?<ch>\d+)$/)
           data = {
             interface: m[:iface],
             channel: m[:ch]
